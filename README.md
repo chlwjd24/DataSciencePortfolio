@@ -56,11 +56,37 @@ This portfolio is a compilation of data science projects I have created for my s
 
 ### Deep Learning
 
-
+1. Image Classification (Living Things Dataset):
+    * Using various models from conventional and deep learning methods for classification
+    
+2. Image Classification (MNIST Dataset):
+    * Building a multi-headed CNN for classification
+    
+3. SARSA Q-Learning
+    * Q-Learning with OpenAI Gym's Taxi Environment
+    
+4. Deep Q-Networks
+    * DQN with OpenAI Gym's Environment
 
 ### Natural Language Processing
 
+1. Basic NLP Techniques using NLTK
 
+2. NLP Exploration with RNNs:
+    * Generating Shakespearean text
+    * Sentiment analysis
+    * Reusing pretrained embeddings and language models
+    * Encoder-decoder network for neural machine translation
+    * Bidirectional layer for RNNs
+    * Beam search and attention layer
+    * Implementing HuggingFace models
+    
 
-### Time Series
+### Series
 
+1. Sequence Processing with RNNs and CNNs:
+    * Building simple and deep RNNs
+    * Forecasting with RNNs
+    * Deep RNNs with layer norms
+    * LSTMs and GRUs
+    * One-dimensional convolutional layers and WaveNet
