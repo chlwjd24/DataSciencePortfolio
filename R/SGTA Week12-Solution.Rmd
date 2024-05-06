@@ -1,0 +1,126 @@
+---
+title: "SGTA Week12"
+author: "LMHS"
+date: "23/05/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Question 1
+
+Generate data according to $y=4x^3+6x^2 - 1 + \epsilon$, where $\epsilon$ represents some noise.  Instead of adding noise with constant variance, add noise that is variable and depends on the value of the predictor, eg $v(\epsilon) = 20x + 1$. So, increasing values of the predictor show increasing variance
+
+```{r}
+n <- 100
+x <- seq(0,1,length=n)
+
+# Compute the variance that depends on x
+var <- 20*abs(x)+1
+
+# Generate the  noise 
+noise_eps <- rep(0,n) 
+for (i in 1:n){
+  noise_eps[i] = rnorm(1,0,sqrt(var[i]))
+}
+
+# True function
+y_true <- 4*x^3 + 6*x^2 - 1
+y <- y_true + noise_eps
+
+# plot the original data
+plot(x,y, col='red')
+lines(x,y_true)
+legend("topleft",bty="n", c("Function with noise","True function"),col=c("red" ,"black"),lty=1,lwd=1, box.lty=0)
+```
+
+Do a polynomial fit and plot the residuals versus the fitted values. Do they show that the constant variance assumption is violated?
+
+```{r}
+fit1<- lm(y ~ poly(x, 1, raw=TRUE))
+fit2<- lm(y ~ poly(x, 2, raw=TRUE))
+fit3<- lm(y ~ poly(x, 3, raw=TRUE))
+
+par(mfrow = c(1,3))
+plot(fit1, which=1)
+plot(fit2, which=1)
+plot(fit3, which=1)
+```
+We see that the residuals of the quadratic and cubic polynomials are almost identical and the residual of the linear term is of a magnitude greater than the previous two.
+<!-- As x increases, the magnitude of the residual terms grows. This last observation is consistent with the fact that our noise variance grows as x increases. This would also indicate that the model of a constant variance is not appropriate for this data set. -->
+
+## Question 2
+
+```{r}
+library(rmatio)
+environ <- read.csv("environ.csv")
+str(environ)
+x<- environ$wind
+y<- environ$ozone
+
+plot(x,y, xlab = "Wind Speed (MPH)", ylab = "Ozone (PPB)")
+
+# Try different smoothing parameters, where bigger alpha should generate smoother curves  
+alpha_array <- c(0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.9)
+
+
+for (i in 1:length(alpha_array)){
+  
+  alpha <- alpha_array[i] 
+
+  # Degree of local regression = 1
+  lambda <- 1
+  fit.l1 <- loess(y ~ x, span=alpha, degree = 1)
+  plot(x,y, xlab = "Wind Speed (MPH)", ylab = "Ozone (PPB)", main=c("Loess with lambda= 1 and alpha= ",alpha), ylim = c(0,180))
+  j <- order(fit.l1$x)
+  lines(x[j], fit.l1$fitted[j] , col="blue") 
+  
+  # Degree of local regression = 2
+  lambda <- 2
+  fit.l2 <- loess(y ~ x, span=alpha, degree = 2)
+  plot(x,y, xlab = "Wind Speed (MPH)", ylab = "Ozone (PPB)",  main=c("Loess with lambda= 2 and alpha= ",alpha), ylim = c(0,180))
+  j <- order(fit.l2$x)
+  lines(x[j], fit.l2$fitted[j] , col="blue") # to get smoothed output
+}
+```
+
+
+If $n$ is the total number of observations and $\alpha$ is smoothing parameter, such that $0 < \alpha < 1$,  We expect that when $\alpha$ is "small" we are fitting our local curves to specific details of the specific values of the given data set.
+As we make $\alpha$ smaller and smaller the loess smooths become much more oscillatory effectively, these local fits are begin fit to the noise inherent our data rather than the actual signal.
+
+
+## Question 3
+
+Use loess to describe the relationship between oxygen uptake and the expired ventilation.
+
+```{r}
+anaerob <- read.csv("anaerob.csv")
+str(anaerob)
+x<- anaerob$x
+y<- anaerob$y
+
+plot(x,y, xlab = "Ventilation", ylab = "Oxigen uptake")
+
+alpha_array <- c(0.2, 0.5, 0.7, 0.9)
+
+for (i in 1:length(alpha_array)){
+  alpha <- alpha_array[i] 
+
+  #Check degree =1
+  lambda <- 1
+  fit.l1 <- loess(y ~ x, span=alpha, degree = 1)
+  plot(x,y, xlab = "Ventilation", ylab = "Oxigen uptake", main=c("Loess with lambda= 1 and alpha= ",alpha), ylim = c(0,180))
+  j <- order(fit.l1$x)
+  lines(x[j], fit.l1$fitted[j] , col="blue") 
+  
+  lambda <- 2
+  fit.l2 <- loess(y ~ x, span=alpha, degree = 2)
+  plot(x,y, xlab = "Ventilation", ylab = "Oxigen Uptake",  main=c("Loess with lambda= 2 and alpha= ",alpha), ylim = c(0,180))
+  j <- order(fit.l2$x)
+  lines(x[j], fit.l2$fitted[j] , col="blue") 
+}
+```
+
+As data is less noisy, both local regression parameters perform well.Thus almost any reasonable value of the smoothing parameter works well.

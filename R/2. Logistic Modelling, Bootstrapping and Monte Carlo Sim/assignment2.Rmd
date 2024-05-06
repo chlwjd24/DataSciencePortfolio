@@ -1,0 +1,253 @@
+---
+title: "Assignment 2"
+author: "Brian Choi"
+date: "2023-05-11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+
+## Part A
+
+$$g(w)=\frac{1}{2}\Sigma^m_{i=1}(y_i-w^Tx_i)^2$$
+$$g'(w)=\Sigma^m_{i=1} \{(y_i-w^Tx_i)(-x_iTw^{T-1})\}$$
+
+$$g''(w)=\Sigma^m_{i=1} \{(y_i-w^Tx_i)(-x_iT(T-1)w^{T-2}+(-x_iTw^{T-1})(-x_iTw^{T-1}) \}$$
+$$= \Sigma^m_{i=1} \{(y_i-w^Tx_i)(-x_iT(T-1)w^{T-2}+x_i^2(Tw^{T-1})^2 \}$$
+Since $g''(w)>0$ the function $g(w)$ is convex.
+
+## Part B
+
+$$h(w) = \frac{1}{2}\gamma||w||^2$$
+$$h'(w)=\frac{1}{2}\gamma||2w||$$
+$$h''(w)=\gamma>0$$
+Since $h''(w)>0$, $h(w)$ is convex.
+
+## Part C
+
+$$f(w)=g(w)+h(w)$$
+Since the second derivative of $g(w)$ and $h(w)$ are both positive, 
+
+$$f''(w) = g''(w) + h''(w) > 0$$
+
+## Part D
+
+To find the minima of $f(w)$,
+
+$$ f'(w)=\gamma||w||+\Sigma^m_{i=1} \{(y_i-w^Tx_i)(-x_iTw^{T-1})\}=0$$
+
+$$ \gamma||w||+\Sigma^m_{i=1} \{(x_iw^{2T-1}-y_iw^{T-1})\}=0$$
+
+# Question 2
+
+## Part 1
+
+$$log(\frac{1}{1-p})=\beta_0+\beta_1x_1+...+\beta_nx_n $$
+where vector $x$ is composed of variables radius_mean, texture_mean, etc. and $Y$ is the outcome variable diagnosis
+
+## Part 2
+
+```{r}
+load("Breast.Rdata")
+```
+
+There are 30 attributes to predict the outcome. There are 456 samples and 113 samples in the train and test data sets respectively. The distribution of the diagnosis variable is a binomial distribution.
+
+## Part 3
+
+```{r}
+Breast.fit <- glm(formula = factor(diagnosis) ~ ., family = "binomial", data = Breast$train)
+```
+```{r}
+summary(Breast.fit)
+```
+## Part 4
+
+```{r}
+library(caret)
+Breast.prob = predict(Breast.fit, Breast$train, type="response")
+Breast.pred = rep("B", dim(Breast$train)[1])
+Breast.pred[Breast.prob > 0.5] = "M"
+caret::confusionMatrix(data = factor(Breast.pred), reference = factor(Breast$train$diagnosis))
+```
+
+## Part 5
+
+```{r}
+Breast.prob <- predict(Breast.fit, Breast$test, type="response")
+Breast.pred <- rep("B", dim(Breast$train)[1])
+Breast.pred[Breast.prob > 0.5] <- "M"
+caret::confusionMatrix(data = factor(Breast.pred), reference <- factor(Breast$train$diagnosis))
+```
+
+## Part 6
+
+The test set accuracy is 58.33% whereas the train set accuracy is 100%. The accuracy for the train set is the accuracy of the model on the data it was constructed on whereas the test set accuracy is the accuracy of the model on data it has not yet seen. Since the test set accuracy is accuracy based off unseen data, the test set accuracy should be used for the performance of the classifier.
+
+## Part 7
+
+Ridge regression includes all of the features in the model whereas Lasso regression also performs feature selection. However, ridge regression is works well with highly correlated features and is good for over fitted models. Lasso regression is used for models with very high number of features and can set the estimates of coefficients to exactly zero. Since a parsimonious model is desired, the lasso regression should be considered as it allows variable selection and therefore an advantage in interpretation.
+
+## Part 8
+
+```{r}
+library(glmnet)
+Breast.lasso <- cv.glmnet(x=as.matrix(Breast$train[2:31]), y=Breast$train$diagnosis, alpha=1, family = "binomial",type.measure="class")
+plot(Breast.lasso)
+```
+
+## Part 9
+
+```{r}
+lasso <- glmnet(x=as.matrix(Breast$train[2:31]), y=Breast$train$diagnosis, lambda=Breast.lasso$lambda.1se, alpha=1, family = "binomial")
+colnames(as.matrix(Breast$train[2:31]))[lasso$beta[,1]!=0]
+```
+There are 9 attributes selected in the model.
+
+## Part 10
+
+```{r}
+lasso.prob <- predict(lasso, newx=as.matrix(Breast$test[2:31]), type="response")
+lasso.pred <- rep("B", dim(Breast$train)[1])
+lasso.pred[lasso.prob > 0.5] <- "M"
+caret::confusionMatrix(data = factor(lasso.pred), reference = factor(Breast$train$diagnosis))
+```
+
+## Part 11
+
+```{r}
+library(ROCit)
+roc.model1 <- rocit(score=as.numeric(lasso.pred == "B"), class=as.numeric(Breast$train$diagnosis=="B"))
+roc.model2 <- rocit(score=as.numeric(Breast.pred == "B"), class=as.numeric(Breast$train$diagnosis=="B"))
+```
+
+```{r}
+plot(roc.model1, col = c(1,"gray50"), legend = FALSE, YIndex = FALSE)
+lines(roc.model2$TPR~roc.model2$FPR, col = 2, lwd = 2)
+legend("bottomright", col = c(1,2),
+c("Penalised Logistic Model", "Logistic Model"), lwd = 2)
+```
+
+## Part 12
+The AUC for model penalised logistic model  and logistic model  respectively is:
+```{r}
+roc.model1$AUC
+roc.model2$AUC
+```
+Since the logistic model has a slightly higher AUC, it should be chosen.
+
+# Question 3
+
+## Part 1
+
+```{r}
+library(boot)
+library(simcausal)
+library(moments)
+n=500
+set.seed(42)
+x=rbern(n, 0.45)
+```
+
+## Part 2
+
+```{r}
+m=1000
+bootmom <- c()
+for (i in 1:m)
+{
+    obs <- sample(1:n, replace=TRUE)
+    bootmom[i] <- mean(x[obs])
+}
+
+bootmle <- c()
+for (i in 1:m)
+{
+    obs <- sample(1:n, replace=TRUE)
+    bootmle[i] <- min(mean(x[obs]),0.5)
+}
+```
+
+## Part 3
+
+```{r}
+sd.mle =  sd(bootmle)
+sd.mom = sd(bootmom)
+sd.mle
+```
+
+```{r}
+sd.mom
+```
+
+```{r}
+biased.mle=mean(bootmle)-min(mean(x),0.5)
+biased.mom=mean(bootmom)-mean(x)
+biased.mle
+```
+
+```{r}
+biased.mom
+```
+The performance for the mom estimate is better since the estimated bias is smaller relative to the estimate of the standard error.
+
+## Part 4 
+
+```{r}
+
+```
+
+# Question 4
+
+## Part 1
+
+```{r}
+data = read.csv("remiss.csv")
+boxplot(data$time~data$group, names=c("Treatment","Control"),xlab = "Group", ylab="Time")
+
+```
+The remission times are higher for the treatment group compared to the control group.
+
+## Part 2
+
+```{r}
+library(dplyr)
+library(ggplot2)
+data %>%
+  ggplot(aes(sample = time)) +
+  geom_qq() + geom_qq_line() +
+  facet_wrap(~group, scales = "free_y")
+```
+The first probability plot is the treatment plot and the second plot is the control plot. Both plots indicate a normal distribution.
+
+## Part 3
+
+$H_0:\mu_0=\mu_1$ vs. $H_1: \mu_0 \neq \mu_1$
+
+## Part 4 
+
+```{r}
+obs <- mean(data$time[data$group==0])-mean(data$time[data$group==1])
+n <- 1000
+sim <- numeric(n)
+for(i in 1:n){
+  shuffled <- sample(data$group)
+  sim[i] <- mean(data$time[shuffled==0])-mean(data$time[shuffled==1])
+}
+alpha <- 0.05
+lower_crit <- quantile(sim, alpha/2)
+upper_crit <- quantile(sim, 1 - alpha/2)
+
+p_value <- mean(abs(sim) >= abs(obs))
+```
+
+```{r}
+lower_crit
+upper_crit
+p_value
+```
+The lower critical value is -5.38, the upper critical value is 5.76 and the p value is 0.006. Since the p-value is less than the significance level, the null hypothesis is rejected and conclude that there is enough evidence to support the alternative  hypothesis.

@@ -1,0 +1,3 @@
+"0","library(glmnet)"
+"0","Breast.lasso <- cv.glmnet(x=as.matrix(Breast$train[2:31]), y=Breast$train$diagnosis, alpha=1, family = ""binomial"",type.measure=""class"")"
+"0","plot(Breast.lasso)"

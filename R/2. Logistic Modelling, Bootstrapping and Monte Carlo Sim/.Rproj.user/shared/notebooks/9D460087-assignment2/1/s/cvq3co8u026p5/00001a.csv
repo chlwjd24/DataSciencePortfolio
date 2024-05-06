@@ -1,0 +1,6 @@
+"0","library(boot)"
+"0","data<- x"
+"0","boot.ci(boot.out = b, conf = 0.05, type = c(""perc""))"
+"2","Error in if (const(t, min(1e-08, mean(t, na.rm = TRUE)/1e+06))) { : 
+  missing value where TRUE/FALSE needed
+"

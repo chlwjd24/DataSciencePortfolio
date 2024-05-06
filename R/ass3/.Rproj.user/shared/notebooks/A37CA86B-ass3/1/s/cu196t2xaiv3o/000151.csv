@@ -1,0 +1,8 @@
+"0","X<-data$floorspace"
+"0","Y<-data$saleprice"
+"0","h<-100"
+"0","nw <- ksmooth(X, Y, kernel=""normal"", bandwidth=h)"
+"0","nw1<- ksmooth(X, Y, kernel=""normal"", bandwidth=h/5)"
+"0","nw2<- ksmooth(X, Y, kernel=""normal"", bandwidth=5*h)"
+"0","# Plotting the estimated curve on top of the data:"
+"0","plot(X, Y); "

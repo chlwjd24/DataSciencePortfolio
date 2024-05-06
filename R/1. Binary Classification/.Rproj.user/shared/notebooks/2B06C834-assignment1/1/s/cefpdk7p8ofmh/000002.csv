@@ -1,0 +1,6 @@
+"0","df <- read.csv(""C:/Users/brian/Google Drive/uni/STAT8178/ass1/BinaryClassifier.csv"", header=FALSE)"
+"0","colnames(df) <- c(""x1"",""x2"",""y"")"
+"0","train <- df[1:456,]"
+"0","test <- df[457:569,]"
+"0",""
+"0","plot(train, test)"

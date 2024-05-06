@@ -1,0 +1,6 @@
+"0","library(boot)"
+"0","library(simcausal)"
+"0","library(moments)"
+"0","n=500"
+"0","set.seed(42)"
+"0","x=rbern(n, 0.45)"

@@ -1,0 +1,1 @@
+"0","model <- glm(formula = y ~ x1 + x2, family = ""binomial"", data = train)"

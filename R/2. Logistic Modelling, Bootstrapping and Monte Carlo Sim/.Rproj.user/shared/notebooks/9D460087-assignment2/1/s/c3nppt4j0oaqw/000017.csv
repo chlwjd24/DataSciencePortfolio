@@ -1,0 +1,3 @@
+"0","data = read.csv(""remiss.csv"")"
+"0","boxplot(data$time~data$group, names=c(""Treatment"",""Control""),xlab = ""Group"", ylab=""Time"")"
+"0",""

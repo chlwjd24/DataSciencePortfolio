@@ -1,0 +1,7 @@
+"0","h<-100"
+"0","s1 <- function(x,h,X) sum(dnorm((X-x)/h)*(X-x))"
+"0","s2 <- function(x,h,X) sum(dnorm((X-x)/h)*(X-x)^2)"
+"0","bl <- function(x,h,X) dnorm((X-x)/h)*(s2(x,h,X)-(X-x)*s1(x,h,X))"
+"0","l_ll <- function(x,X,h) bl(x,h,X)/sum(bl(x,h,X))"
+"0","rn_ll <- function(x,Y,X,h) sum(l_ll(x,X,h)*Y)"
+"0","rn_ll <- Vectorize(rn_ll,""x"")"

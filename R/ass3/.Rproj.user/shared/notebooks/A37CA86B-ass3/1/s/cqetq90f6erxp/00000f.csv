@@ -1,0 +1,2 @@
+"0","n <- 500"
+"0","sample <- ifelse(runif(n) <= alpha, rchisq(n, df = 3), rbeta(n, shape1 = 5, shape2 = 2))"

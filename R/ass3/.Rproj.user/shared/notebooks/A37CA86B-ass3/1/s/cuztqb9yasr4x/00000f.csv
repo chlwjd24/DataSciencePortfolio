@@ -1,0 +1,4 @@
+"0","P_hat <- mean(Y <= 1.2)"
+"0","n_replications <- 500"
+"0","bootstrap_samples <- replicate(n_replications, mean(sample(Y, replace = TRUE) <= 1.2))"
+"0","P_hat_star <- mean(bootstrap_samples)"

@@ -1,0 +1,59 @@
+---
+title: "Assignment1"
+author: "Brian Choi"
+date: "16/03/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+## Part A
+
+$$\nabla C_1(w;Data)=\frac{1}{m}\Sigma \nabla=\frac{1}{m}(\sigma (w^Tx^i)-y^i)x^i$$
+
+
+
+## Part B
+
+## Part C
+
+## Part D
+
+## Part E
+
+## Part F
+
+## Part G
+
+## Part H
+
+## Part I
+
+## Part J
+
+# Question 2
+## Part A
+
+## Part B
+
+## Part C
+
+## Part D
+
+## Part E
+
+## Part F
+
+## Part G
+
+
+```{r cars}
+summary(cars)
+```
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```

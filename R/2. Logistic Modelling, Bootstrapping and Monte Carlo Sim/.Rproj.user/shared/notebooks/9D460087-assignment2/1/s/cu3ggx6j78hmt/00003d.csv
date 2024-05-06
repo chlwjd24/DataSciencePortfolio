@@ -1,0 +1,3 @@
+"0","library(ROCit)"
+"0","roc.model1 <- rocit(score=as.numeric(lasso.pred == ""B""), class=as.numeric(Breast$train$diagnosis==""B""))"
+"0","roc.model2 <- rocit(score=as.numeric(Breast.pred == ""B""), class=as.numeric(Breast$train$diagnosis==""B""))"

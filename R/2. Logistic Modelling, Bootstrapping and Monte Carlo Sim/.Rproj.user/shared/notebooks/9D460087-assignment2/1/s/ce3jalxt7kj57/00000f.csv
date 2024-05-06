@@ -1,0 +1,7 @@
+"0","biased.mle=mean(bootmle)-min(mean(x),0.5)"
+"0","biased.mom=mean(bootmom)-mean(x)"
+"0","biased.mle"
+"1","[1]"
+"1"," -0.000746"
+"1","
+"

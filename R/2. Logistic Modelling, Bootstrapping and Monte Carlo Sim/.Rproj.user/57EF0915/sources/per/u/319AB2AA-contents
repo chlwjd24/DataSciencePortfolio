@@ -1,0 +1,15 @@
+library(moments)
+n=300
+set.seed(12345678)
+y=rt(n, df = 1)
+# Generated sample X_i
+x = y + 5
+mn = mean(x)
+md = median(x) # The middle observation
+mn
+## [1] 7.509423
+md
+m = 1000
+B = sapply(1:m, function(i) sample(x, replace = TRUE))
+bootMeans = apply(B, 2, mean)
+bootMeds = apply(B, 2, median)
