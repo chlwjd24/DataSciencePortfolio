@@ -1,0 +1,241 @@
+---
+title: "Modern Computational Statistical Methods"
+subtitle: "STAT8178-STAT7178"
+author: "Macquarie University S1 2022"
+date: "Week 11"
+output: beamer_presentation
+theme: CambridgeUS
+colortheme: "dove"
+includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Kernel Regression Function Estimation
+
+
+
+\scriptsize
+```{r, echo=FALSE}
+filip <- read.csv("filip.csv") # Reading data set
+x<- filip$x
+y<- filip$y
+fit1<- lm(y ~ poly(x, 1, raw=TRUE))
+fit2<- lm(y ~ poly(x, 9, raw=TRUE))
+summary(fit2)
+```
+
+---
+
+# Plot
+
+Not surprisingly, we see that the linear model is not adequate.
+\scriptsize
+```{r, echo=FALSE, fig.height=4, fig.width=8}
+plot(x,y, ylim = c(0.7,1))
+xx <- seq(min(x),max(x), length.out=250)
+lines(xx, predict(fit1, data.frame(x=xx)), col='blue')
+lines(xx, predict(fit2, data.frame(x=xx)), col='green')
+```
+
+---
+
+
+---
+
+# Loess Code
+
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+environ = read.csv("environ.csv") # Reading data set
+x<- environ$wind
+y<- environ$ozone
+plot(x,y, xlab = "Wind Speed (MPH)", ylab = "Ozone (PPB)")
+```
+
+---
+
+# Loess Code
+
+\scriptsize
+```{r}
+n <- length(x) # Find the number of data points.
+x0 <- 10 # Find the estimate at this point.
+alpha <- 2/3
+lambda <- 1
+k <- floor(alpha*n)
+
+# First step is to get the neighborhood.
+dist <- abs(x0 - x)
+sdist <- sort(dist)
+ind <- sort(dist, index.return=TRUE)$ix # Return order of observation
+# Get the points in the neighborhood.
+Nx <- x[ind[1:k]]
+Ny <- y[ind[1:k]]
+delxo = dist[ind[k]] # Maximum distance of neighborhood=3.7 or sdist[k]
+```
+
+---
+
+# Loess Code
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+plot(x,y, xlab = "Wind Speed (MPH)", ylab = "Ozone (PPB)")
+abline(v=c(10-3.7,10+3.7), col=c("blue", "blue"))
+```
+
+---
+
+# R Code
+
+\scriptsize
+```{r}
+# Delete the ones outside the neighborhood.
+dist = dist[ind[1:k]]
+# These are the arguments to the weight function.
+u <- dist/delxo
+#Get the weights for all points in the neighborhood.
+w = (1 - u^3)^3
+# Now using only those points in the neighborhood,
+# do a weighted least squares fit of degree 1.
+data <- data.frame(Nx,Ny,w)
+reg <- lm( Ny ~ Nx, data = data, weights=w)
+```
+
+---
+
+# Loess Code
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+plot(x,y, xlab = "Wind Speed (MPH)", ylab = "Ozone (PPB)")
+abline(v=c(10-3.7,10+3.7), col=c("blue", "blue"))
+clip(x1 = 10-3.7, x2 = 10+3.7, y1=0, y2=150)
+abline(reg, col="red")
+```
+
+---
+
+# LOESS in R
+
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+fit.l <- loess(y ~ x, span=2/3, degree = 1) #  smoothing span = alpha = 2/3, degree = lambda=1
+
+# Plot it!
+plot(x,y, xlab = "Wind Speed (MPH)", ylab = "Ozone (PPB)", ylim = c(0,180))
+j<- order(fit.l$x)
+# get smoothed output
+lines(x[j], fit.l$fitted[j] , col="blue")
+```
+
+---
+
+# LOWEST Code
+
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+data(cars)
+plot(cars, main = "lowess(cars)")
+lines(lowess(cars), col = 2)
+lines(lowess(cars, f=.2), col = 3) # f: the smoother span.
+legend(5, 120, c(paste("f = ", c("2/3", ".2"))), lty = 1, col = 2:3)
+```
+
+# R Session: Example 
+
+\scriptsize
+```{r}
+rm(list=ls()) # Remove all the objects from the workspace
+#---------------------------------data 
+n=100 #sample size
+a=0   
+b=1
+sigma=0.1 #sd of error term
+X<-runif(n,a,b)
+epsilon<-rnorm(n,0,sigma)
+Y= sin(4*pi*X) + epsilon
+h1=0.015  #bandwidth
+#----------------------------------True function
+Truefunc <- function(x) sin(4*pi*x)
+#--------------------------------- Local Linear kernel estimator
+s1 <- function(x,h,X) sum(dnorm((X-x)/h)*(X-x))
+s2 <- function(x,h,X) sum(dnorm((X-x)/h)*(X-x)^2)
+bl <- function(x,h,X)dnorm((X-x)/h)*(s2(x,h,X)-(X-x)*s1(x,h,X))
+l_ll <- function(x,X,h)bl(x,h,X)/sum(bl(x,h,X))
+rn_ll <- function(x,Y,X,h)sum(l_ll(x,X,h)*Y)
+rn_ll <- Vectorize(rn_ll,"x")
+#---------------------------------- Nadaraya-Watson Estimator
+NW<- function(x,Y,X, h)  sum(dnorm((X-x)/h)*Y)/(sum(dnorm((X-x)/h)))
+NW<- Vectorize(NW, "x")
+```
+
+---
+
+# R Session
+
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+
+#------------------------------------fitting the estimator to data
+curve(Truefunc,a,b,lwd=2,ylim=c(-1.5,1.5))
+curve(rn_ll(x,Y,X,h=h1),a,b,lwd=2,col="red",add = T)
+curve(NW(x,Y,X,h=h1),a,b,lwd=2,col="blue",add = T)
+points(X,Y)
+legend("topright",bty="n", c("True function","LL", "NW"),col=c("black" ,"red", "blue"),lty=1,lwd=2, box.lty=0)
+```
+
+# R Session
+
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+#---------------------------------- MSE
+curve((Truefunc(x)- rn_ll(x,Y,X,h1))^2,a,b,lwd=2,ylim=c(0,0.2), col="red", ylab = "MSE")
+curve((Truefunc(x)- NW(x,Y,X,h1))^2,a,b,lwd=2,ylim=c(0,0.2), col="blue", add=T)
+legend("topright",bty="n", c("LL", "NW"),col=c("red", "blue"),lty=1,lwd=2, box.lty=0)
+```
+
+---
+
+# R Session
+
+\scriptsize
+```{r}
+#----------------------------MISE
+repl=50 #number of replications for estimating MISE
+ISE1=rep(NA,repl)
+ISE2=rep(NA,repl)
+
+for(i in 1:repl){
+    X<-runif(n,a,b)
+    epsilon<-rnorm(n,0,sigma)
+    Y=sin(4*pi*X) + epsilon
+   ISE1[i]=try(integrate(function(x)(Truefunc(x)-(rn_ll(x,Y,X,h1)))^2,a,b)$value,silent=T)
+   ISE2[i]=try(integrate(function(x)(Truefunc(x)-(NW(x,Y,X,h1)))^2,a,b)$value,silent=T)
+
+}
+MISE1=mean(ISE1)
+MISE2=mean(ISE2)
+message("Estimation of MISE of Local Linear Estimator is ", MISE1, ".")
+message("Estimation of MISE of Nadarawa Watson Estimator is ", MISE2, ".")
+
+```
+
+---
+
+# Exercise
+
+Consider the Doppler model:
+$$Y_i = \sqrt{x_i(1-x_i)} \sin(\frac{2.1 \pi}{x_i+0.05}) + \epsilon_i$$
+where $x_i=\frac{i}{n},~~~ i=1,...,n$  and $\epsilon_i$ is drawn from a standard normal distribution $N(0,1)$.
+\begin{enumerate}
+\item Generate $1000$ values of $Y$ and construct scatterplot with true regression function.\\
+\item Use the loess method to smooth the scatterplot of the data. 
+\item Choose a kernel function and compute the Nadaraya-Watson estimator. 
+\item Choose a kernel function and compute the local linear kernel estimator.
+\item Using Monte Carlo simulation to calculate $MISE$ for estimators in parts (2-4), i.e. loess, Nadaraya-Watson and local linear kernel estimators. Compare the performance of
+these three estimators.
+\end{enumerate}

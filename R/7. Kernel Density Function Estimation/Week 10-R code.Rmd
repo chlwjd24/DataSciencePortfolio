@@ -1,0 +1,260 @@
+---
+title: "Modern Computational Statistical Methods"
+subtitle: "STAT8178-STAT7178"
+author: "Macquarie University S1 2022"
+date: "Week 10"
+output: beamer_presentation
+theme: CambridgeUS
+colortheme: "dove"
+includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+# Example 1
+
+\scriptsize
+```{r, echo=FALSE,fig.height=4, fig.width=6}
+# Generate standard normal random variables.
+n = 10
+data = rnorm(n)
+# We will get the density estimate at these x values.
+x = seq(-4,4,length.out = 50);
+h = 1.06*n^(-1/5)
+f<- dnorm((x- data[1])/h)/h
+allfhat<- f
+  plot(x,f, col = "blue" , type='l', ylab = "f(x)= Standard Normal Density", main = "Kernel Density Function Estimator")
+for (i in 2:n) {
+  #get each kernel function evaluated at x
+ #centered at data
+  f<- dnorm((x- data[i])/h)/h
+  lines(x,f, col = "blue" , type='l')
+  allfhat=f+allfhat
+}
+fhat=allfhat/n
+lines(x, fhat, col= 'red', type='l')
+rug(data)
+```
+
+---
+
+# Example 2
+
+\scriptsize
+```{r, echo=FALSE,fig.height=4, fig.width=6}
+n=100
+data <- rchisq(n, 3) # Generate sample from Chi Squared with 3 degrees of freedom.
+x<- seq(-min(data)- 0.7, max(data)+0.7, length.out = 50)
+h= 1.4* n^(-1/5)  # h = 1.06*n^(-1/5)
+f<- dnorm((x- data[1])/h)/h
+allfhat<- f
+  plot(x,f, col = "blue" , type='l', ylab = "f(x)= Chi Squared with 3 degrees of freedom")
+for (i in 2:n) {
+  #get each kernel function evaluated at x
+ #centered at data
+  f<- dnorm((x- data[i])/h)/h
+  lines(x,f, col = "blue" , type='l')
+  allfhat=f+allfhat
+}
+fhat=allfhat/n
+lines(x, fhat, col= 'red', type='l')
+rug(data)
+```
+---
+
+# R Session
+
+The computation of the kernel density estimation (kde) in R is done through the `density` function. The function automatically chooses the bandwidth `h`   using a data-driven criterion.
+
+\scriptsize
+```{r, echo=FALSE,fig.height=3, fig.width=6}
+# Sample 100 points from a N(0, 1)
+set.seed(1234567)
+samp <- rnorm(n = 100, mean = 0, sd = 1)
+
+# Quickly compute a kernel density estimator and plot the density object
+# Automatically chooses bandwidth and uses normal kernel
+plot(density(x = samp), main = "Kernel Density Estimation")
+
+# Select a particular bandwidth (0.5) and kernel (Epanechnikov)
+lines(density(x = samp, bw = 0.5, kernel = "epanechnikov"), col = 4)
+
+# Available Colors 1 = “black”
+#2 = “red”
+#3 = “green3”
+#4 = “blue”
+#5 = “cyan”
+#6 = “magenta”
+#7 = “yellow”
+#8 = “gray”
+```
+
+---
+
+# R Session
+
+`density()` automatically chooses the interval for plotting the kernel density
+ estimator (observe that the black line goes to roughly between -3 and 3). This can be tuned using `from` and `to`.
+\scriptsize
+```{r,fig.height=3, fig.width=6}
+plot(density(x = samp, from = -4, to = 4), xlim = c(-5, 5), col=5)
+```
+
+---
+
+# R Session
+
+The density object is a list
+\scriptsize
+```{r}
+kde <- density(x = samp, from = -5, to = 5, n = 1024)
+str(kde)
+```
+
+---
+
+# R Session
+Plotting the returned values of the kde
+\scriptsize
+```{r, echo=FALSE,fig.height=3, fig.width=6}
+plot(kde$x, kde$y, type = "l", xlab = "x", ylab = "Standard Normal Density")
+curve(dnorm(x), col = 2, add = TRUE) # True density
+rug(samp)
+```
+---
+
+# R Session
+
+Bandwidth Selection:
+\scriptsize
+```{r}
+# Data
+set.seed(667478)
+n <- 100
+x <- rnorm(n)
+
+# Rule-of-thumb
+message("Rule-of-thumb Bandwidth:")
+
+bw.nrd(x = x)
+
+# Sheather and Jones method
+message("Sheather and Jones Bandwidth:")
+bw.SJ(x = x, method = "dpi")
+
+```
+
+---
+
+# R Session
+
+\scriptsize
+```{r}
+# The Least Squares Cross-Validation (LSCV) selector, also denoted 
+# Unbiased Cross-Validation (UCV) selector
+message("The Least Squares Cross-Validation (LSCV) Bandwidth:")
+bw.ucv(x = x)
+
+# in this method, optimization routines may get trapped in spurious solutions
+# Extend search interval
+message("The Least Squares Cross-Validation (LSCV) Bandwidth(extend search interval):")
+bw.ucv(x = x, lower = 0.01, upper = 1)
+
+```
+
+---
+
+# R Session
+
+\scriptsize
+```{r, warning=FALSE}
+# Biased Cross-Validation method (BCV)
+
+# BCV gives a warning
+message("Biased Cross-Validation Bandwidth:")
+bw.bcv(x = x)
+
+
+# Extend search interval
+args(bw.bcv)
+message("Biased Cross-Validation Bandwidth (extend search interval):")
+bw.bcv(x = x, lower = 0.01, upper = 1)
+
+```
+
+---
+
+# Which bandwidth selector is the most adequate for a given dataset?
+
+There is no simple and universal answer to this question. There are, however, a series of useful facts and suggestions:
+
+Trying several selectors and inspecting the results may help on determining which one is estimating the density better.
+The DPI selector has a convergence rate much faster than the cross-validation selectors. Therefore, in theory, it is expected to perform better than LSCV and BCV. For this reason, it tends to be amongst the preferred bandwidth selectors in the literature.
+Cross-validatory selectors may be better suited for highly non-normal and rough densities, in which plug-in selectors may end up oversmoothing.
+LSCV tends to be considerably more variable than BCV.
+The RT is a quick, simple, and inexpensive selector. However, it tends to give bandwidths that are too large for non-normal data.
+
+---
+
+# Estimation of MSE and MISE
+
+\scriptsize
+```{r, echo=FALSE,fig.height=3, fig.width=6}
+#---------------------------------data 
+n=100 #sample size
+a=-4   
+b=4
+X<-rnorm(n)
+h1=bw.nrd(x = X) #Bandwidth
+#----------------------------------True function
+Truefunc <- function(x) dnorm(x)
+
+#---------------------------------  kernel estimator
+fhat <- function(x,h,X){
+  n<-length(X)
+  sum(dnorm((X-x)/h))/(n*h)
+}
+fhat<- Vectorize(fhat,"x")
+#------------------------------------fitting the estimator to data
+curve(Truefunc,a,b,lwd=2,ylim=c(0,0.5), ylab = "f(x)")
+curve(fhat(x,h=h1,X),a,b,lwd=2,col="red",add = T)
+legend("topright",bty="n", c("True function","KDE"),col=c("black" ,"red"),lty=1,lwd=2, box.lty=0)
+```
+
+---
+
+# Estimation of MSE 
+
+
+\scriptsize
+```{r, echo=FALSE,fig.height=3, fig.width=6}
+# -------------------------- MSE
+
+curve((fhat(x,h=h1,X)-Truefunc(x))^2,a,b,lwd=2,col=3, ylab = "MSE")
+
+```
+
+---
+
+# Estimation of MISE
+
+\scriptsize
+```{r}
+
+#----------------------------MISE
+repl=50 #number of replications for estimating MISE
+ISE=rep(NA,repl)
+for(i in 1:repl){
+  X<-rnorm(n)
+    ISE[i]=try(integrate(function(x)(Truefunc(x)-(fhat(x,h1,X)))^2,a,b)$value,
+               silent=T)
+  }
+MISE=mean(ISE)
+message("Estimation of MISE is ", MISE, ".")
+
+```

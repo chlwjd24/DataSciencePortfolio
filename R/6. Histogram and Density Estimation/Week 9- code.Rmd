@@ -1,0 +1,211 @@
+---
+title: "Modern Computational Statistical Methods"
+subtitle: "STAT8178-STAT7178"
+author: "Macquarie University S1 2022"
+date: "Week 9"
+output: beamer_presentation
+theme: CambridgeUS
+colortheme: "dove"
+includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(moments) # calculate moments 
+library(boot) # Bootstrapping
+library(purrr) # rdunif: Generate random sample from a discrete uniform distribution
+```
+
+
+
+# R session
+
+Source: `https://bookdown.org/egarpor/PM-UC3M/npreg-npdens.html`.
+Example: we consider the `faithful` dataset, which contains the duration of the eruption and the waiting time between eruptions for the Old Faithful geyser in Yellowstone National Park (USA).
+
+---
+
+# R Session
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+# Duration of eruption
+faithE <- faithful$eruptions
+
+# Default histogram: automatically chooses bins and uses absolute frequencies
+histo <- hist(faithE)
+```
+
+---
+
+# R Session
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+# Bins and bin counts
+histo$breaks # Bk's
+histo$counts # vk's
+# With relative frequencies
+hist(faithE, probability = TRUE)
+```
+
+---
+
+# R Session
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+# Choosing the breaks
+t0 <- min(faithE)
+h <- 0.25
+Bk <- seq(t0, max(faithE), by = h)
+hist(faithE, probability = TRUE, breaks = Bk)
+rug(faithE) # The sample
+```
+
+---
+
+# R Session
+
+We focus first on exploring the dependence on $t_0$
+  with the next example, as it serves for motivating the next density estimator.
+  
+\scriptsize
+```{r, echo=FALSE, fig.height=3, fig.width=6}
+# Uniform sample
+set.seed(1234567)
+u <- runif(n = 100)
+
+# t0 = 0, h = 0.2
+Bk1 <- seq(0, 1, by = 0.2)
+
+# t0 = -0.1, h = 0.2
+Bk2 <- seq(-0.1, 1.1, by = 0.2)
+
+# Comparison
+par(mfrow = 1:2)
+hist(u, probability = TRUE, breaks = Bk1, ylim = c(0, 1.5),
+     main = "t0 = 0, h = 0.2")
+rug(u)
+abline(h = 1, col = 2)
+hist(u, probability = TRUE, breaks = Bk2, ylim = c(0, 1.5),
+     main = "t0 = -0.1, h = 0.2")
+rug(u)
+abline(h = 1, col = 2)
+```
+
+---
+
+# R Session
+
+A popular collection of simulation scenarios was given by Marron and Wand (1992) and are conveniently available through the package `nor1mix`.
+  
+\scriptsize
+```{r, echo=FALSE, fig.height=3, fig.width=6}
+library(nor1mix)
+# Available models
+#?nor1mix::MarronWand
+
+# Simulating -- specify density with MW object
+samp <- nor1mix::rnorMix(n = 500, obj = nor1mix::MW.nm9)
+hist(samp, freq = FALSE)
+
+# Density evaluation
+x <- seq(-4, 4, length.out = 400)
+lines(x, nor1mix::dnorMix(x = x, obj = nor1mix::MW.nm9), col = 2)
+
+
+```
+
+---
+
+# Session R
+
+
+\scriptsize
+```{r, echo=FALSE}
+# Plot a MW object directly
+# A normal with the same mean and variance is plotted in dashed lines
+par(mfrow = c(2, 2))
+plot(nor1mix::MW.nm5)
+plot(nor1mix::MW.nm7)
+plot(nor1mix::MW.nm10)
+plot(nor1mix::MW.nm12)
+lines(nor1mix::MW.nm1, col = 2:3) # Also possible
+```
+
+---
+
+# Session R
+
+ Generate `n` random numbers, distributed according to a normal mixture
+
+\scriptsize
+```{r, echo=FALSE}
+x <- rnorMix(5000, MW.nm10)
+# hist(x)# you don't see the claw
+plot(density(x), ylim = c(0,0.6),
+main = "Estim. and true 'MW.nm10' density")
+lines(MW.nm10, col = "orange")
+```
+
+---
+
+# Example 1
+
+Example 9.1. Computational Statistics Handbook with MATLAB, 3rd Edition
+Wendy L. and Angel R. Martinez.
+\scriptsize
+```{r, echo=FALSE,fig.height=3, fig.width=6}
+n=1000
+x<- rnorm(n,1)
+
+# Histogram Estimator
+
+histog<- hist(x, probability = T)
+#Get the bin width.
+h<- histog$breaks[2]-histog$breaks[1]
+# Now return an estimate at a point xo.
+xo = 0
+# Find all of the bin limits less than xo.
+bc<- histog$breaks
+ind = which(bc < xo)
+# xo should be between these two bin centers.
+end<-length(ind)
+b1 = bc[ind[end]]
+b2 = bc[ind[end]+1]
+fhat<- histog$density[end]
+fhat
+```
+
+---
+
+# Example 2
+
+Example 9.2
+Computational Statistics Handbook with MATLAB, 3rd Edition
+ Wendy L. and Angel R. Martinez.
+ 
+ \scriptsize
+```{r, echo=FALSE,fig.height=3, fig.width=6}
+geyser <- read.csv("geyser.csv")
+x= geyser$geyser
+n = length(x)
+# Use Normal Reference Rule for bin width.
+h = 3.5*sd(x)*n^(-1/3)
+# Get the bin mesh. Put some extra space on the ends.
+t0 = min(x) - 1
+tm = max(x) + 1
+rng = tm - t0
+nbin = ceiling(rng/h) #returns the smallest integers not less than x
+bins = seq(t0, nbin*h + t0, by =h)
+hist(x, probability = TRUE, breaks = bins, main = "Old Faithful - Waiting Time Between Eruptions", xlab = "Waiting Times (minutes)", ylab = "Probability")
+rug(x) # The sample
+```
+
+---
+
+# Reference:
+\begin{itemize}
+
+\item Martinez, W. L. and Martinez, A. R. (2016). Computational Statistics Handbook with MATLAB (third edition). CRC Press.
+
+\end{itemize}

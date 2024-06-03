@@ -1,0 +1,217 @@
+---
+title: "Modern Computational Statistical Methods"
+subtitle: "STAT8178-STAT7178"
+author: "Macquarie University S1 2022"
+date: "Week 7"
+output: beamer_presentation
+theme: CambridgeUS
+colortheme: "dove"
+includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Monte Carlo Methods for Hypothesis Testing
+
+
+
+# Example
+
+The `mcdata.csv` data set contains 25 observations. We are interested in using
+these data to test the following null and alternative hypotheses:
+$$ H_0: \,\,\,\, \mu=454$$
+$$ H_1: \,\,\,\, \mu< 454$$
+This is a lower-tailed test and we assume that the observation came from a Normal distribution with unknown average $\mu$ and known variance $\sigma=7.8$. The test Statistic is $$z=\frac{(\overline{x}-454)}{\sigma/\sqrt{n}}.$$
+
+---
+
+# Code in R - critical values
+\scriptsize
+```{r}
+mcdata <- read.csv("mcdata.csv")
+# str(mcdata) # Structure of data frame: mcdata
+x= mcdata$mcdata
+n = length(x)
+mu <- 454
+sigma = 7.8
+sigmabar <- sigma/sqrt(n) # Standard Error of sample mean
+Tobs <- (mean(x)-454)/sigmabar
+Tobs
+```
+
+---
+
+
+# Code - critical values
+\scriptsize
+```{r}
+M <- 1000 # Number of Monte Carlo trials
+Tm <- rep(1, M) # Storage for test statistics from the MC trials
+for(i in 1:M){
+  
+# Obtain a random sample of size n from the pseudo-population.  
+xx <- rnorm(n,mu,sigma)
+
+# Calculate the value of the test statistic using the random
+# sample in step above and record it
+Tm[i] <- (mean(xx)-454)/sigmabar
+}
+```
+
+---
+
+# Code - critical values
+
+\scriptsize
+```{r}
+# Get the critical value for alpha.
+# This is a lower-tail test, so it is the alpha quantile.
+alpha <- 0.05
+cv <- quantile(Tm, alpha)
+cv
+```
+
+
+---
+
+# Code - pvalue
+
+\scriptsize
+```{r}
+# Let's change the test statistic to xbar.
+Tobs = mean(mcdata$mcdata) 
+M <- 1000 # Number of Monte Carlo trials.
+# Start the simulation
+Tm <- rep(0,M)
+for (i in 1:M){
+  xs <- rnorm(n, mu, sigma)
+  Tm[i] <- mean(xs)
+} 
+```
+
+
+---
+
+# Code - pvalue
+
+\scriptsize
+```{r}
+#Get the p-value. This is a lower tail test.
+#Find all of the values from the simulation that are
+#below the observed value of the test statistic.
+ind <- which(Tm < Tobs)
+pvalhat <- length(ind)/M
+pvalhat
+```
+
+
+
+\textcolor{red}{Excercise: Modify the code to estimate p-values of upper-tailed and two tailed tests.}
+
+
+
+
+
+---
+
+# Procedure - MC Assessment Of Type I Error
+
+\begin{enumerate}
+\setcounter{enumi}{4}
+\item Repeat steps 2 through 4 for $M$ trials.
+\item The probability of making a Type I error is $$ \hat \alpha = \frac{1}{M} \sum_{i=1}^{M} I_i$$
+\end{enumerate}
+
+
+
+---
+
+# R Code
+
+\scriptsize
+```{r}
+M <- 10000
+alpha <- 0.05
+#Get the critical value, using z as test statistic.
+cv <- qnorm(0.05, 0, 1) # True Critical Region
+# Start the simulation
+Tm <- rep(0,M)
+Im =0
+for(i in 1:M){
+ # Get the critical value, using z as test statistic.
+x <- rnorm(n,mu,sigma)
+Tm[i] <- (mean(x)-454)/sigmabar
+if(cv>Tm[i]){
+ # then reject H_0
+  Im <- Im +1}
+  }
+ alphahat <- Im/M
+ alphahat
+```
+
+
+---
+
+# Code: Type II error and Power
+
+\scriptsize
+```{r}
+x= mcdata$mcdata
+n = length(x)
+M <-1000
+#Get the critical value, using z as test statistic.
+cv <- qnorm(0.05, 0, 1) # True Critical Region
+
+mu <- 454
+sigma<-7.8
+sigxbar <- sigma/sqrt(n)#Population sigma is known.
+alpha<-0.05
+
+#Get some alternative hypotheses:
+mualt <- 445:453 
+Tm <- rep(0,M)
+betahat=rep(0,length(mualt))
+```
+
+
+---
+
+\scriptsize
+```{r}
+for(j in 1:length(mualt)){
+Im =0
+#Get the true mean.
+ mu = mualt[j]
+ for(i in 1:M)  {
+  
+#Generate a sample under  H_1.
+xs=rnorm(n,mu,sigma) 
+Tm[i]=(mean(xs)-454)/sigxbar
+
+if(Tm[i]>cv) {
+ # Then did not reject H_0.
+  Im = Im +1
+
+               }
+
+ betahat[j]=Im/M 
+             } 
+                       }
+#Get the estimated power
+ powhat   = 1-betahat 
+# critiacal values
+```
+
+
+---
+
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+plot(mualt,powhat, xlab = expression(mu), ylab = "Estimation of Power")
+```
+
+\textcolor{red}{Excercise: Modify the code to estimate $\beta$ (power) of upper-tailed and two tailed tests.}
+

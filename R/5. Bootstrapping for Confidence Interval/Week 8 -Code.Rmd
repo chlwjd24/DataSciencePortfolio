@@ -1,0 +1,248 @@
+---
+title: "Modern Computational Statistical Methods"
+subtitle: "STAT8178-STAT7178"
+author: "Macquarie University S1 2022"
+date: "Week 8"
+output: beamer_presentation
+theme: CambridgeUS
+colortheme: "dove"
+includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(moments) # calculate moments 
+library(boot) # Bootstrapping
+library(purrr) # rdunif: Generate random sample from a discrete uniform distribution
+```
+
+# Bootstrapping
+
+\scriptsize
+```{r}
+forearm <- read.csv("forearm.csv")
+x <- forearm$forearm
+# First get the sample size
+n <- length(x)
+B <- 100 # Number of bootstrap replicates
+# Get the value of the statistic of interest.
+thetahat = skewness(x)
+thetahat
+```
+
+---
+
+# A better way
+
+\scriptsize
+```{r}
+# Use rdunif to get the indices to the resamples.
+inds <- rdunif(n, b= n, a= 1 )
+# table(inds) # Frequency table of indices
+xboot <- x[inds] # A bootstrap sample
+```
+
+
+---
+
+# A better way to generate boot samples
+
+\scriptsize
+```{r}
+# Generate boot samples
+boot.samples = matrix(sample(x, size = B * n, replace = TRUE),B,n)
+```
+
+Notice that we used `sample()` to sample from the values in x and we
+sampled with replacement (replace=TRUE) to fill all B*n elements in the matrix. Next, the three
+arguments to apply() are the object on which parts will applied the function, the number 1 to
+indicate the function should be applied to each row (use 2 for columns), and the function name
+skewness.
+
+\scriptsize
+```{r}
+thetab = apply(boot.samples, 1, skewness)
+seb=sd(thetab)
+seb
+```
+
+---
+
+
+# Example
+
+\begin{itemize}
+\item Use the forearm data again.
+\item Estimate the bias in the sample skewness.
+\item Use the same bootstrap replicates as before.
+\end{itemize}
+
+---
+
+# R Code
+
+\scriptsize
+```{r}
+# Evaluate the mean.
+meanb = mean(thetab)
+meanb
+# Now estimate the bias.
+biasb = meanb - thetahat
+biasb
+# Now the bias-corrected estimate:
+bctheta = thetahat - biasb  #  =2*theta-meanb
+bctheta
+```
+
+
+
+---
+
+# Example
+
+\begin{itemize}
+\item Estimate the skewness of the forearm data.
+\end{itemize}
+
+---
+
+# R Code: Bootstrap Standard Confidence Interval
+
+\scriptsize
+```{r}
+# Bootstrap Standard Confidence Interval
+alpha = 0.05
+Lower = thetahat - qnorm(1- alpha/2)*seb
+Upper = thetahat - qnorm(alpha/2)*seb
+c(Lower, Upper)
+```
+
+---
+
+# R Code: Bootstrap-t interval
+
+\scriptsize
+```{r}
+#estimated standard error of skewness of that particular bootstrap sample.
+shat=array(dim=B)
+zstarb=array(dim=B)
+for(i in 1:B)  {
+  boot.samples2 = matrix(sample(boot.samples[i,], size = B * n, replace = TRUE),B,n)
+  thetab2 = apply(boot.samples2, 1, skewness)
+shat[i]=sd(thetab2)
+}
+# Compute Z*b=(thetahatb-thetahat)/shat
+zstarb=array(dim=B)
+for(i in 1:B)
+{ zstarb[i]=(thetab[i]-thetahat)/(shat[i])}
+#Get the quantiles.
+ k = (B*alpha)/2
+ szval = sort(zstarb);
+ tlo = szval[k]
+ thi = szval[B-k]
+# Get the endpoints of the interval.
+ blo = thetahat - thi*seb
+bhi = thetahat - tlo*seb
+c(blo, bhi)
+```
+
+---
+
+# Example
+
+Same exercise as before: find the bootstrap percentile interval for the skewness of \textbf{forearm} data.
+
+---
+
+# R Code: Bootstrap Percentile Interval
+\scriptsize
+```{r}
+quantile(thetab, probs = c(alpha/2, 1- alpha/2))
+```
+
+
+---
+
+# Excercise
+
+\begin{itemize}
+\item Estimate the variance of the forearm data.
+\item Find three Bootstrap Confidence Interval of for the variance of the forearm data.
+\item Use the sample second central moment: $$ \hat \sigma^{2} = \frac{1}{n} \sum_{i=1}^{n} (X_i - \overline X )^{2}$$
+\end{itemize}
+
+---
+
+# Package boot
+
+Generate R bootstrap replicates of a statistic applied to data. Both parametric and nonparametric
+resampling are possible. For the nonparametric bootstrap, possible resampling methods are the ordinary bootstrap, the balanced bootstrap, antithetic resampling, and permutation.
+
+---
+
+# Package boot
+\scriptsize
+```{r}
+data<- x
+data=as.data.frame(data)
+fc <- function(data,i) {
+  d <- data[i, ] # allows boot to select sample
+  skew<- skewness(d)
+  return(skew)
+}
+B <- 1000 #number of replications
+set.seed(12345)
+boot.skewness <- boot(data, fc, R=B)
+boot.skewness
+```
+
+---
+
+# Package boot
+
+While the printed output for boot.skewness is brief, R saves additional information that can be listed:
+\scriptsize
+```{r}
+summary(boot.skewness)
+```
+
+---
+
+
+# Confidence Interval using boot package:
+
+\scriptsize
+```{r}
+#boot.ci(boot.out = boot.skewness,    conf =  0.05,type = c ("all"))
+boot.ci(boot.out = boot.skewness, type = c("norm", "basic", "perc", "bca"))
+```
+
+---
+
+
+# Confidence Interval using boot package:
+
+\scriptsize
+```{r}
+#First we should estimate variance  of the bootstrap replicates of the variable of interest.
+fc.var <- function(data,i, sdevision) {
+  d <- data[i, ] # allows boot to select sample
+  skew<- skewness(d)
+  v<- sdevision^2
+ c(skew, v)
+}
+boot.skewness1 <- boot(data, sdevision=shat, fc.var, R=B)
+boot.ci(boot.out = boot.skewness1, type = c("all"))
+```
+
+---
+
+# Confidence Interval using boot package:
+
+To look at a histogram and normal quantile-quantile plot of your bootstrap estimates, you can use plot with the “boot” object you created. The histogram includes a dotted vertical line indicating the location of the original statistic.
+\scriptsize
+```{r, fig.height=3, fig.width=6}
+plot(boot.skewness)
+```
+

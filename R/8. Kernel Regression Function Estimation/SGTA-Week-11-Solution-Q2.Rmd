@@ -1,0 +1,207 @@
+---
+title: "SGTA Week 11- Solution"
+author: "Hassan Doosti"
+date: "10/05/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+## Q2. 
+
+# Generate a random sample from the exponential distribution.
+
+```{r}
+n=500
+x<- rexp(n, 1)
+```
+
+# Construct histogram and kernel density function estimator using the Normal Reference Rule.
+
+```{r}
+s = sd(x) # standard devision of the sample which should be close to 1.
+
+h  = 3.5*s*(n)^(-1/3)
+Bks= ceiling((max(x)-min(x))/h) # the number of cells for the histogram
+sf = ((2^(1/3))*s) / ( exp(5*s^2/4) * ((s^2 + 2)^(1/3)) * (exp(s^2) - 1)^(1/2) ) #Skewned factor
+hsf  = sf*h #bandwidth for skenwed distribution
+
+histEs<- hist(x, probability = T, breaks = Bks)
+# Plotting the returned values of the kde
+hk<- 1.06*s*n^(-1/5)
+kde<- density(x, bw= hk)
+lines(kde$x, kde$y, col = "red", type = "l")
+curve(dexp(x,1), col = "blue", add = TRUE) # True density
+rug(x)
+
+```
+# Using Monte Carlo simulation, estimate the MSE and MISE of estimators in (2). Which estimator is
+# better?
+
+
+```{r}
+n=500
+#a=0   
+#b=7
+set.seed(110)
+X<- rexp(n, 1)
+a=min(X) 
+b=max(X)
+s=sd(X)
+#----------------------------------True function
+Truefunc <- function(x) dexp(x,1)
+
+#---------------------------------  kernel estimator
+fhat <- function(x,h,X){
+  n<-length(X)
+  sum(dnorm((X-x)/h))/(n*h)
+}
+fhat<- Vectorize(fhat,"x")
+
+#--------------------------------- Histogram estimator
+fhis <- function(x,h,X){
+  n<- length(X)
+  Bks= ceiling((max(X)-min(X))/h) # the number of cells for the histogram
+  histEs<- hist(X, probability = T, breaks = Bks, plot = F, warn.unused= F)
+  bc<- histEs$breaks
+  # fund histogram estimator at x- Similar to example 9.1 in lecture week 9
+  n1<- length(x)
+  ind = which(bc < x)
+  end<-length(ind)
+  fhat<- histEs$density[end]
+}
+
+fhis<- Vectorize(fhis,"x")
+
+#------------------------------------fitting the estimator to data
+h  <- 3.5*s*(n)^(-1/3)
+hk <- 1.06*s*n^(-1/5)
+curve(Truefunc,a,b,lwd=2,ylim=c(0,1))
+curve(fhat(x,h=hk,X),a,b,lwd=2,col="red",add = T)
+curve(fhis(x,h=h,X),a,b,lwd=2,col="green",add = T)
+
+legend("topright",bty="n", c("True function","Kernel Estimator", "Histogram Estimator"),col=c("black" ,"red", "green"),lty=1,lwd=2, box.lty=0)
+
+# -------------------------- MSE
+
+curve((fhat(x,h=hk,X)-Truefunc(x))^2,a,b,lwd=2, col="red")
+curve((fhis(x,h=h,X)-Truefunc(x))^2,a,b,lwd=2,col="green", add = T)
+
+
+#----------------------------MISE
+repl=50 #number of replications for estimating MISE
+ISE1=rep(NA,repl)
+ISE2=rep(NA,repl)
+
+for(i in 1:repl){
+  X<-rexp(n,1)
+  a=min(X)
+  b=max(X)
+  s=sd(X)
+  h= 3.5*s*(n)^(-1/3)
+  #h=1
+  hk<- 1.06*s*n^(-1/5)
+  ISE1[i]=try(integrate(function(x)(Truefunc(x)-(fhat(x,hk,X)))^2,a,b)$value,silent=T)
+  ISE2[i]=as.numeric(try(integrate(function(x)(Truefunc(x)-fhis(x,h,X))^2,a,b)$value, silent = T))
+}
+MISE1=mean(ISE1)
+MISE2=mean(as.numeric(ISE2) ,na.rm = TRUE)
+message("Estimation of MISE of Kernel Density Estimator is ", round(MISE1,4), ".")
+
+message("Estimation of MISE of Histogram Estimator is ", round(MISE2,4), ".")
+```
+# Use the skewness factor to adjust h and re-estimate the MSE and MISE in (2). Which estimator is better?
+
+
+```{r}
+n=500
+#a=0   
+#b=7
+set.seed(110)
+X<- rexp(n, 1)
+a=min(X) 
+b=max(X)
+s=sd(X)
+#----------------------------------True function
+Truefunc <- function(x) dexp(x,1)
+
+#---------------------------------  kernel estimator
+fhat <- function(x,h,X){
+  n<-length(X)
+  sum(dnorm((X-x)/h))/(n*h)
+}
+fhat<- Vectorize(fhat,"x")
+
+#--------------------------------- Histogram estimator
+fhis <- function(x,h,X){
+  n<- length(X)
+  Bks= ceiling((max(X)-min(X))/h) # the number of cells for the histogram
+  histEs<- hist(X, probability = T, breaks = Bks, plot = F, warn.unused= F)
+  bc<- histEs$breaks
+  # fund histogram estimator at x- Similar to example 9.1 in lecture week 9
+  n1<- length(x)
+  ind = which(bc < x)
+  end<-length(ind)
+  fhat<- histEs$density[end]
+}
+
+fhis<- Vectorize(fhis,"x")
+
+#------------------------------------fitting the estimator to data
+h  <- 3.5*s*(n)^(-1/3)
+
+# Skewness factor Histohram estimator
+sf = ((2^(1/3))*s) / ( exp(5*s^2/4) * ((s^2 + 2)^(1/3)) * (exp(s^2) - 1)^(1/2) )
+
+h=h*sf  # adjusted h
+
+hk <- 1.06*s*n^(-1/5)
+
+# Skewness factor kernel estimator
+sf   = ((12^(1/5))*s) / ( exp(7*s^2/4) * sqrt(exp(s^2)-1) * (9*s^4 + 20*s^2 + 12)^(1/5) )
+
+hk=hk*sf  # adjusted hk
+
+curve(Truefunc,a,b,lwd=2,ylim=c(0,1))
+curve(fhat(x,h=hk,X),a,b,lwd=2,col="red",add = T)
+curve(fhis(x,h=h,X),a,b,lwd=2,col="green",add = T)
+
+legend("topright",bty="n", c("True function","Kernel Estimator", "Histogram Estimator"),col=c("black" ,"red", "green"),lty=1,lwd=2, box.lty=0)
+
+# -------------------------- MSE
+
+curve((fhat(x,h=hk,X)-Truefunc(x))^2,a,b,lwd=2, col="red")
+curve((fhis(x,h=h,X)-Truefunc(x))^2,a,b,lwd=2,col="green", add = T)
+
+
+#----------------------------MISE
+repl=50 #number of replications for estimating MISE
+ISE1=rep(NA,repl)
+ISE2=rep(NA,repl)
+
+for(i in 1:repl){
+  X<-rexp(n,1)
+  a=min(X)
+  b=max(X)
+  s=sd(X)
+  h= 3.5*s*(n)^(-1/3)
+  sf = ((2^(1/3))*s) / ( exp(5*s^2/4) * ((s^2 + 2)^(1/3)) * (exp(s^2) - 1)^(1/2) )
+
+  h=h*sf  # adjusted h
+  #h=1
+  hk<- 1.06*s*n^(-1/5)
+  # Skewness factor kernel estimator
+  sf= ((12^(1/5))*s) / ( exp(7*s^2/4) * sqrt(exp(s^2)-1) * (9*s^4 + 20*s^2 + 12)^(1/5) )
+
+  hk=hk*sf  # adjusted hk
+  ISE1[i]=as.numeric(try(integrate(function(x)(Truefunc(x)-(fhat(x,hk,X)))^2,a,b)$value,silent=T))
+  ISE2[i]=suppressWarnings(as.numeric(try(integrate(function(x)(Truefunc(x)-fhis(x,h,X))^2,a,b)$value, silent = T))) # suppressWarnings function suppreses warning!
+}
+MISE1=mean(as.numeric(ISE1) ,na.rm = T)
+MISE2=mean(as.numeric(ISE2) ,na.rm = TRUE)
+message("Estimation of MISE of Kernel Density Estimator is ", round(MISE1,4), ".")
+
+message("Estimation of MISE of Histogram Estimator is ", round(MISE2,4), ".")
+```
+# Which window width is better?
+
+For kernel density estimator, that's better we  use adjusted bin width as the corresponding MISE is smaller. However, the performance of the Histogram estimator doesn't change  before and after the adjustment. 

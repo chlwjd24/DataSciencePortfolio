@@ -1,0 +1,137 @@
+---
+title: "SGTA Week 9- Solution"
+author: "Hassan Doosti"
+date: "23/04/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Question 1
+
+1) Simulate a sample of 300 values using t distribution with one degree of freedom (Cauchy distribution).
+```{r}
+library(moments)
+n=300
+set.seed(12345678)
+y=rt(n, df = 1)
+```
+
+2) Using your sample generated in 1) to compute the two estimates for $\mu$ with $\hat{\mu}_1 = \bar{x}$ and $\hat{\mu}_2 = \tilde{x}$, the median of the sample.
+
+
+    ```{r gen}
+    # Generated sample  X_i
+    x = y + 5
+    mn = mean(x)
+    md = median(x) # The middle observation
+    mn
+    md
+    
+    ```
+3) Use your sample to generate $m = 1000$ bootstrap estimates of  $\hat{\mu}_{1\star} = \bar{x}_{\star}$ and $\hat{\mu}_{2\star} = \tilde{x}_{\star}$.
+    ```{r boot-samp}
+    m = 1000
+    B = sapply(1:m, function(i) sample(x, replace = TRUE))
+    bootMeans = apply(B, 2, mean)
+    bootMeds = apply(B, 2, median)
+    ```
+
+4) Estimate standard error of above two estimators.
+
+```{r}
+sd.mean= sd(bootMeans)
+sd.median=sd(bootMeds)
+
+sd.mean
+sd.median
+```
+5) Estimate biased of above two estimators.
+
+```{r}
+biased.Mean= mean(bootMeans)-mean(x)
+biased.Median= mean(bootMeds)- median(x)
+biased.Mean
+biased.Median
+
+```
+6) Use the significance level $\alpha = 0.01$. Generate following confidence intervals for the two estimators, $\mu$ with $\hat{\mu}_1 = \bar{x}$ and $\hat{\mu}_2 = \tilde{x}$.
+    
+a) The standard interval based only on the sample mean and standard error;
+
+```{r}
+alpha=0.01
+Lower1.mean= mean(x)-qnorm(1- alpha/2)*sd(x)/(sqrt(n))
+Upper1.mean= mean(x) -qnorm(alpha/2)*sd(x)/(sqrt(n))
+c(Lower1.mean, Upper1.mean )
+```
+b) A boostrap standard interval
+
+```{r}
+# CI based on Sample Mean
+Lower2.mean = mn - qnorm(1- alpha/2)*sd.mean
+Upper2.mean = mn - qnorm(alpha/2)*sd.mean
+c(Lower2.mean, Upper2.mean)
+# CI based on Sample Median
+Lower2.median = md - qnorm(1- alpha/2)*sd.median
+Upper2.median = md - qnorm(alpha/2)*sd.median
+c(Lower2.median, Upper2.median)
+
+
+```
+
+c) A bootstrap-t interval
+d) A bootstrap percentile interval
+
+ Estimation of variances
+
+```{r}
+#estimated standard variance of mean of a particular bootstrap sample.
+vhat.mean=array(dim=m)
+vhat.median=array(dim=m)
+ite=200 # Iterations for estimation of variance
+for(i in 1:m)  {
+  B1 = sapply(1:ite, function(i) sample(B[,i], replace = TRUE))
+    bootMeans = apply(B, 2, mean)
+    bootMeds = apply(B, 2, median)
+vhat.mean[i]=var(bootMeans)
+vhat.median[i]=var(bootMeds)
+}
+```
+
+
+
+ CIs for sample mean
+```{r}
+library(boot)
+data<- x
+data=as.data.frame(data)
+  fc.var.mean <- function(data,i, Est.var) {
+  d <- data[i,] # allows boot to select sample
+  mn<- mean(d)
+  v<- Est.var
+ c(mn, v)
+    }
+    boot.mean <- boot(data, Est.var=vhat.mean, fc.var.mean, R=m)
+boot.ci(boot.out = boot.mean, conf =  0.01, type = c("norm", "stud", "perc"))
+    
+
+```
+CIs for sample median
+```{r}
+    fc.var.median <- function(data,i, Est.var) {
+  d <- data[i,] # allows boot to select sample
+  mn<- median(d)
+  v<- Est.var
+ c(mn, v)
+    }
+    boot.median <- boot(data, Est.var=vhat.median, fc.var.median, R=m)
+boot.ci(boot.out = boot.median, conf =  0.01, type = c("norm", "stud", "perc"))
+
+```
+
+
+
+7) Comment on the resulting size of the intervals.
+
+The median gives the narrower intervals. The median seems superior since it is less affected by the extreme outliers that are possible from the Cauchy ($t_1$) distribution.

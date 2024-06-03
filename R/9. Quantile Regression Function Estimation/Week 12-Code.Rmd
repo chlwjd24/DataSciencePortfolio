@@ -1,0 +1,300 @@
+---
+title: "Modern Computational Statistical Methods"
+subtitle: "STAT8178-STAT7178"
+author: "Macquarie University S1 2022"
+date: "Week 12"
+output: beamer_presentation
+theme: CambridgeUS
+colortheme: "dove"
+includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(quantreg) # Quantile regression package
+library(ggplot2)
+library(SparseM) # quantreg depends on this package
+library(MASS)
+```
+
+
+# Quantile Regression Models
+
+Table of contents:
+\begin{enumerate}
+\item Introducion
+\begin{itemize}
+\item Quantiles
+\item Orninary regression models
+\end{itemize}
+\item Quantile regression models
+\begin{itemize}
+\item Linear quantile regression
+\item Nonparametric quantile regression
+\end{itemize}
+\end{enumerate}
+
+---
+
+# Example
+
+\begin{itemize}
+\item The Table below shows $L(u)$ 
+for different values of $u$.
+\begin{table}
+\begin{tabular}{llllllllll}
+$u$&1&2&3&4&5&6&7&8&9\\
+Expected loss&36&29&24&21&20&21&24&29&36
+\end{tabular}
+\end{table}
+
+\item Clearly, the minimum is achieved at $u=5$.Thus, median = 5.
+\end{itemize}
+
+---
+
+# Example
+
+\scriptsize
+```{r, echo=FALSE, fig.height=3, fig.width=6}
+u<- seq(1,9,0.05)
+tau<- 0.5
+y<- seq(1,9,1)
+loss_u<- array(dim=length(u))
+for (i in 1:length(u)) {
+ loss_u[i]=  (tau-1)/9*sum(y[y-u[i]<0]-u[i]) +tau/9* sum(y[y-u[i]>0]-u[i]) 
+}
+plot(u,loss_u, ylab = "L(u)")
+message("Median is ", u[which.min(loss_u)], ".")
+```
+
+---
+
+
+
+# Steps for running quantile regression using R:
+
+1. To install the package (for the first time), run code: `install.packages(“quantreg”)`
+2. To turn on the package, run code: `library(quantreg)`
+3. Import data and run: `attach(YOURDATA)`
+4. Define independent variables: `X=cbind(variable1, variable2, variable3)`
+5. To run quantile regression and read summary, for example for 0.25, run:
+`rq25=rq(variableY ~ X, data=YOURDATA, tau=0.25)`
+`summary(rq25)`
+6. To run 0.25 and 0.75 and read summary, you can run as following:
+`rq2575=rq(variableY ~ X, data=YOURDATA, tau=c(0.25, 0.75))`
+`summary(rq2575)`
+7. To plot the quantile regression:
+`rq0595=rq(variableY ~ X, data=YOURDATA, seq(0.05, 0.95, by =0.05))`
+`rq0595sum=summary(rq0595)`
+`plot(rq0595sum)`
+
+---
+
+# `quantreg` Package in R
+
+\scriptsize
+```{r, warning=FALSE}
+#make this example reproducible
+set.seed(0)
+
+#create data frame 
+hours <- runif(1000, 1, 10)
+score <- 60 + 2*hours + rnorm(1000, mean=0, sd=.45*hours)
+df <- data.frame(hours, score)
+#fit model
+model <- rq(score ~ hours, data = df, tau = 0.9)
+
+#view summary of model
+summary(model)
+```
+
+---
+
+# Fitted model
+
+From the output, we can see the estimated regression equation:
+
+$$90^{th} ~percentile~ of ~exam ~score = 60.25 + 2.437*(hours).$$
+
+For example, the 90th percentile of scores for all students who study 8 hours is expected to be \textbf{79.75}:
+
+$$90^{th}~ percentile ~of ~exam score = 60.25 + 2.437*(8) = 79.75.$$
+
+---
+
+# Visualize the Results 
+
+\scriptsize
+```{r,echo=F, fig.height=3, fig.width=6}
+#create scatterplot with quantile regression line and simple linear regression line
+ggplot(df, aes(hours,score)) +
+  geom_point() + 
+  geom_abline(intercept=coef(model)[1], slope=coef(model)[2]) +
+  geom_smooth(method="lm", se=F)
+```
+
+
+
+---
+
+# Computation in R
+
+\begin{itemize}
+\item After defining weights, all that is necessary to estimate a nonparametric quantile regression model is to provide a "weight" option to the command in R. 
+\item The estimates can then be repeated for a series of target points.
+\item A brute force method for choosing target points is to use every observation in the data set as a target (or just choose a grid of points).
+\end{itemize}
+
+---
+
+# R session
+
+\begin{itemize}
+\item The base model is $y = 10 - 0.5x + 0.03x^{2} + u$.
+\item Draw $2,000$ values of $x$ from a $U(0,10)$ distribution.
+\item Draw $u$ from a $\chi^{2}$ distribution with 10 degree of freedom.
+\item Normalize the errors to have a mean of zero and variance of $\textrm{var} \, (10 - 0.5x + 0.03x^{2}) \, (1-R^{2})/R^{2}$ with $R^{2} = 0.8$.
+\end{itemize}
+
+---
+
+# R session
+
+\scriptsize
+```{r, echo=FALSE, warning=FALSE, fig.height=3, fig.width=6}
+#library(quantreg)
+#library(SparseM)
+n<-2000
+x<-runif(n, 0,10)
+u <- rchisq(n,10)
+fx=10-0.5*x+0.03*(x^2)
+# To ensure an R2 of approximately 0.80 for the regression
+newvar=var(fx)*(1-.8)/.8
+u2=(u-mean(u))/sd(u)*sqrt(newvar)
+y=fx+u2
+plot(x,y)
+
+# To run quantile regression and read summary, for example for 0.25,
+rq25=rq(y ~ x, tau=0.25)
+lines(x,fitted(rq25))
+# summary(rq25)
+```
+
+---
+
+# R session
+
+\scriptsize
+```{r, echo=FALSE, warning=FALSE, fig.height=4, fig.width=8}
+#To run 0.25 and 0.75 and read summary, you can run as following:
+rq2575=rq(y ~ x, tau=c(0.25, 0.75))
+#summary(rq2575)
+#To plot the quantile regression:
+rq0595=rq(y ~ x, seq(0.05, 0.95, by =0.05))
+rq0595sum=summary(rq0595)
+plot(rq0595sum)
+```
+
+
+---
+
+# Excercise
+
+\begin{itemize}
+\item Both OLS and quantile regression estimates will be quite accurate when the model is correctly specified,which in this context means using both $x$ and $x^2$ as explanatory variables for y.
+\item Suppose instead that the estimating equation fitted in quantile regression is misspecified such that only x is included as an explanatory variable.
+\item Plot the results obtained with the misspecified model analised with QR analysis.
+\item Try:
+\item Local fit without weights (i.e. uniform weights with 20-30\% window)
+\item Local fit with weights (e.g. tricube weights with 20-30\% window)
+\end{itemize}
+
+---
+
+# R session
+
+\scriptsize
+```{r, echo=FALSE, warning=FALSE}
+# Window Size 25% and the taget value is 2
+dist<-  abs(x-2)
+h=quantile(dist,0.25)
+wgt<- (1 - (dist/h)^3)^3
+fit<- rq(y~x,weights=wgt,subset=(dist<h))
+summary(fit,cov=T)
+summary(rq(y ~ x, tau=0.5))
+```
+
+---
+
+# R session
+
+\scriptsize
+```{r, echo=FALSE, warning=FALSE, fig.height=4, fig.width=8}
+#library(quantreg)
+#library(SparseM)
+ data(engel)
+ attach(engel)
+ plot(income,foodexp,cex=.25,type="n",xlab="Household Income", ylab="Food Expenditure")
+ points(income,foodexp,cex=.5,col="blue")
+ abline(rq(foodexp~income,tau=.5),col="blue")
+ abline(lm(foodexp~income),lty=2,col="red") #the dreaded ols line
+ taus <- c(.05,.1,.25,.75,.90,.95)
+ for( i in 1:length(taus)){
+ abline(rq(foodexp~income,tau=taus[i]),col="gray")}
+
+```
+
+---
+
+# R session
+
+`lprq' is a toy function to illustrate how to do locally polynomial quantile regression univariate smoothing.
+
+Usage
+`lprq(x, y, h, tau = .5, m = 50)`
+
+Arguments:
+
+x	The conditioning covariate
+
+y	The response variable
+
+h	The bandwidth parameter
+
+tau	The quantile to be estimated
+
+m	The number of points at which the function is to be estimated
+
+---
+
+# R session
+
+\scriptsize
+```{r, echo=FALSE, warning=FALSE, fig.height=5, fig.width=10}
+#require(MASS)
+ #library(quantreg)
+#library(SparseM)
+data(mcycle)
+attach(mcycle)
+plot(times,accel,xlab = "milliseconds", ylab = "acceleration (in g)")
+hs <- c(1,2,3,4)
+for(i in hs){
+h = hs[i]
+fit <- lprq(times,accel,h=h,tau=.5)
+lines(fit$xx,fit$fv,lty=i)
+}
+legend(50,-70,c("h=1","h=2","h=3","h=4"),lty=1:length(hs))
+
+```
+
+---
+
+# Reference:
+\begin{itemize}
+
+\item Daniel, P. McMillen. (2013). Quantiule Regression for Spatial Data. Springer.
+\item Koenker, R. (2018). Quantile Regression in R: A Vignette. https://cran.r-project.org/web/packages/quantreg/vignettes/rq.pdf
+
+\end{itemize}

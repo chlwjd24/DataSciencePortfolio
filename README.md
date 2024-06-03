@@ -4,11 +4,9 @@ This portfolio is a compilation of data science projects I have created for my s
 
 ## Contents
 
-### R
-
-
-
 ### Python
+
+#### Conventional Methods
 
 1. Python Basics
 
@@ -54,7 +52,7 @@ This portfolio is a compilation of data science projects I have created for my s
     * Created K-means algorithm
     * Applied the K-means algorithm to the data set successfully
 
-### Deep Learning
+#### Deep Learning
 
 1. Image Classification (Living Things Dataset):
     * Using various models from conventional and deep learning methods for classification
@@ -68,7 +66,7 @@ This portfolio is a compilation of data science projects I have created for my s
 4. Deep Q-Networks
     * DQN with OpenAI Gym's Environment
 
-### Natural Language Processing
+#### Natural Language Processing
 
 1. Basic NLP Techniques using NLTK
 
@@ -82,7 +80,7 @@ This portfolio is a compilation of data science projects I have created for my s
     * Implementing HuggingFace models
     
 
-### Series
+#### Series
 
 1. Sequence Processing with RNNs and CNNs:
     * Building simple and deep RNNs
@@ -90,3 +88,44 @@ This portfolio is a compilation of data science projects I have created for my s
     * Deep RNNs with layer norms
     * LSTMs and GRUs
     * One-dimensional convolutional layers and WaveNet
+        
+### R
+
+1. Binary Classification Project
+
+2. Logistic Modelling, Bootstrapping and Monte Carlo Sim Project
+
+3. Non-parametric methods Project
+
+4. Monte-Carlo Method for Hypothesis Testing
+
+5. Bootstrapping for Confidence Interval
+
+6. Histogram and Density Estimation
+
+7. Kernel Density Function Estimation
+
+8. Kernel Regression Function Estimation
+
+9. Quantile Regression Function Estimation
+
+    
+### SQL
+
+1. Conceptual Modeeling
+
+2. Logical Design
+
+3. Database Normalization
+
+4. Database Manipulation
+
+5. Relational Algebra and Query Processing & Optimization
+
+6. Database Programming
+
+7. Transaction Management
+
+8. Concurrency control
+
+9. Database Recovery

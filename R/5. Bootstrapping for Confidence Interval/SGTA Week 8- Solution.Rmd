@@ -1,0 +1,310 @@
+---
+title: "SGTA Week 8"
+author: "Hassan Doosti"
+date: "20/04/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Question 1
+
+
+```{r}
+options(scipen=999) #prevent scientific notation
+# Load up the data.
+mcdata = read.csv("mcdata.csv")
+x= mcdata$mcdata
+  n = length(x) #sample size
+mu <- 454 #Population mean
+sigma = 7.8 #Population Standard Devision
+```
+
+
+```{r}
+sigxbar <- sigma/sqrt(n)#Standard Error or Variance of Sample Mean
+alpha<-0.05 #Size of Test
+# Try the t-test once
+Tobs = (mean(x)-mu)/sigxbar 
+Tobs
+
+```
+
+
+```{r}
+# Apply Monte Carlo Simulation
+M=1000
+ 
+# Critical value Result
+T.Statistic=array(dim=M)
+
+for(i in 1:M){
+  
+# Decide on a pseudo-population that reflects the characteristics
+# of the true population under the null hypothesis.  
+
+# Obtain a random sample of size n from the pseudo-population.  
+x=rnorm(n,mu,sigma)
+
+# Calculate the value of the test statistic using the random
+# sample in step above and record it
+T.Statistic[i]=(mean(x)-mu)/sigxbar
+  
+}
+#T.Statistic
+# critiacal values
+cv1 = quantile(T.Statistic,alpha/2)
+cv2 = quantile(T.Statistic,1-alpha/2)
+cv1
+cv2
+```
+
+```{r}
+# Test Statistic
+test.statistic <- Tobs
+test.statistic
+```
+
+#Result: Estimated critical values are -1.885069 and 1.912626. Since the observed value of the test statistic −2.56 is less than the lower critical value we reject H0.
+
+P-Values
+
+
+```{r}
+ind1 <- which(T.Statistic<= -abs(Tobs))
+ind2 = which(T.Statistic >= abs(Tobs))
+pvalhat = length(ind1)/M +length(ind2)/M
+pvalhat
+```
+# Result: Estimated p-value is less than the significant level so we need to reject H0. 
+
+
+## Question 2. Part 1
+
+
+```{R}
+
+xbar= 47.2
+sigma=15
+mu=45
+n = 100
+M<-1000
+
+#Get the critical value, using z as test statistic.
+cv <- qnorm(0.95, 0, 1) # True Critical Region
+
+sigxbar <- sigma/sqrt(n)#Population sigma is known.
+alpha<-0.05
+
+#Get some alternative hypotheses:
+mualt <- 46:55 
+j<-length(mualt)
+Tm=array(dim=M)
+
+betahat=array(dim=j)
+
+for(j in 1:length(mualt)){
+  
+Im =0
+
+#Get the true mean.
+ mu = mualt[j]
+ 
+for(i in 1:M)  {
+  
+#Generate a sample from H_1.
+ # xs = sigma*randn(1,n) + mu
+
+xs=rnorm(n,mu,sigma) 
+Tm[i]=(mean(xs)-45)/sigxbar
+# Tm[i]=t.test(x, mu=mu)$statistic  
+
+if(Tm[i]<cv) {
+ # Then did not reject H_0.
+  Im = Im +1
+
+               }
+
+ betahat[j]=Im/M 
+             } 
+                       }
+
+
+plot(mualt,betahat)
+```
+# Result: As the mu is going up the probability of Type II Error is going down.
+
+
+
+
+## Question 2. Part 2
+
+
+Sample size is 50
+```{R}
+xbar= 47.2
+sigma=15
+mu=45
+n = 50
+M<-1000
+
+#Get the critical value, using z as test statistic.
+cv <- qnorm(0.95, 0, 1) # True Critical Region
+
+sigxbar <- sigma/sqrt(n)#Population sigma is known.
+alpha<-0.05
+
+#Get some alternative hypotheses:
+mualt <- 40:55 
+j<-length(mualt)
+Tm=array(dim=M)
+
+betahat=array(dim=j)
+
+for(j in 1:length(mualt)){
+  
+Im =0
+
+#Get the true mean.
+ mu = mualt[j]
+ 
+for(i in 1:M)  {
+  
+#Generate a sample from H_1.
+ # xs = sigma*randn(1,n) + mu
+
+xs=rnorm(n,mu,sigma) 
+Tm[i]=(mean(xs)-45)/sigxbar
+# Tm[i]=t.test(x, mu=mu)$statistic  
+
+if(Tm[i]<cv) {
+ # Then did not reject H_0.
+  Im = Im +1
+
+               }
+
+ betahat[j]=Im/M 
+             } 
+                       }
+#Get the estimated power
+ powhatn50   = 1-betahat 
+
+
+plot(mualt,powhatn50)
+```
+
+
+Sample size is 100
+
+
+```{R}
+xbar= 47.2
+sigma=15
+mu=45
+n = 100
+M<-1000
+
+#Get the critical value, using z as test statistic.
+cv <- qnorm(0.95, 0, 1) # True Critical Region
+
+sigxbar <- sigma/sqrt(n)#Population sigma is known.
+alpha<-0.05
+
+#Get some alternative hypotheses:
+mualt <- 40:55 
+j<-length(mualt)
+Tm=array(dim=M)
+
+betahat=array(dim=j)
+
+for(j in 1:length(mualt)){
+  
+Im =0
+
+#Get the true mean.
+ mu = mualt[j]
+ 
+for(i in 1:M)  {
+  
+#Generate a sample from H_1.
+ # xs = sigma*randn(1,n) + mu
+
+xs=rnorm(n,mu,sigma) 
+Tm[i]=(mean(xs)-45)/sigxbar
+# Tm[i]=t.test(x, mu=mu)$statistic  
+
+if(Tm[i]<cv) {
+ # Then did not reject H_0.
+  Im = Im +1
+
+               }
+
+ betahat[j]=Im/M 
+             } 
+                       }
+#Get the estimated power
+ powhatn100   = 1-betahat 
+
+
+plot(mualt,powhatn100)
+```
+Sample size is 200.
+```{R}
+xbar= 47.2
+sigma=15
+mu=45
+n = 200
+M<-1000
+
+#Get the critical value, using z as test statistic.
+cv <- qnorm(0.95, 0, 1) # True Critical Region
+
+sigxbar <- sigma/sqrt(n)#Population sigma is known.
+alpha<-0.05
+
+#Get some alternative hypotheses:
+mualt <- 40:55 
+j<-length(mualt)
+Tm=array(dim=M)
+
+betahat=array(dim=j)
+
+for(j in 1:length(mualt)){
+  
+Im =0
+
+#Get the true mean.
+ mu = mualt[j]
+ 
+for(i in 1:M)  {
+  
+#Generate a sample from H_1.
+ # xs = sigma*randn(1,n) + mu
+
+xs=rnorm(n,mu,sigma) 
+Tm[i]=(mean(xs)-45)/sigxbar
+# Tm[i]=t.test(x, mu=mu)$statistic  
+
+if(Tm[i]<cv) {
+ # Then did not reject H_0.
+  Im = Im +1
+
+               }
+
+ betahat[j]=Im/M 
+             } 
+                       }
+#Get the estimated power
+ powhatn200   = 1-betahat 
+
+
+plot(mualt,powhatn200)
+```
+
+
+# Result: As sample size increases this variance shrinks to zero. The smaller our variance the more powerful we expect our test to be at avoiding type II errors (failing to reject H0).
+
+
+
+
+
