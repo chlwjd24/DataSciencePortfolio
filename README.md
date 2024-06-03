@@ -51,6 +51,10 @@ This portfolio is a compilation of data science projects I have created for my s
     * Generated a random sample of data
     * Created K-means algorithm
     * Applied the K-means algorithm to the data set successfully
+    
+13. Support Vector Machines
+
+14. Random Forests
 
 #### Deep Learning
 
@@ -65,6 +69,8 @@ This portfolio is a compilation of data science projects I have created for my s
     
 4. Deep Q-Networks
     * DQN with OpenAI Gym's Environment
+    
+5. Neural Networks with Keras
 
 #### Natural Language Processing
 
@@ -79,6 +85,7 @@ This portfolio is a compilation of data science projects I have created for my s
     * Beam search and attention layer
     * Implementing HuggingFace models
     
+3. Sentiment Analysis with NLTK
 
 #### Series
 
